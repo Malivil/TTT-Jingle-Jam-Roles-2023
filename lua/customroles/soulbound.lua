@@ -1,6 +1,8 @@
 local player = player
+local table = table
 
 local PlayerIterator = player.Iterator
+local TableInsert = table.insert
 
 local ROLE = {}
 
@@ -74,7 +76,7 @@ function SOULBOUND:RegisterAbility(ability, defaultEnabled)
     ability.Enabled = function()
         return enabled:GetBool()
     end
-    table.insert(ROLE_CONVARS[ROLE_SOULBOUND], {
+    TableInsert(ROLE_CONVARS[ROLE_SOULBOUND], {
         cvar = "ttt_soulbound_" .. ability.Id .. "_enabled",
         type = ROLE_CONVAR_TYPE_BOOL
     })
@@ -84,7 +86,7 @@ function SOULBOUND:RegisterAbility(ability, defaultEnabled)
         ability.EnabledGW = function()
             return enabledGW:GetBool()
         end
-        table.insert(ROLE_CONVARS[ROLE_GHOSTWHISPERER], {
+        TableInsert(ROLE_CONVARS[ROLE_GHOSTWHISPERER], {
             cvar = "ttt_ghostwhisperer_" .. ability.Id .. "_enabled",
             type = ROLE_CONVAR_TYPE_BOOL
         })
@@ -234,6 +236,12 @@ if SERVER then
 end
 
 if CLIENT then
+    local string = string
+
+    local StringLower = string.lower
+    local TableShuffle = table.Shuffle
+    local TableSort = table.sort
+
     local client
 
     ----------
@@ -286,7 +294,7 @@ if CLIENT then
         for i = 1, maxAbilities do
             local slotId = client:GetNWString("TTTSoulboundAbility" .. tostring(i), "")
             if #slotId == 0 then break end
-            table.insert(ownedAbilities, slotId)
+            TableInsert(ownedAbilities, slotId)
         end
 
         local numCols = GetGlobalInt("ttt_bem_sv_cols", 4)
@@ -428,15 +436,24 @@ if CLIENT then
                 end
 
                 if ic.favorite then
-                    table.insert(paneltablefav, ic)
+                    TableInsert(paneltablefav, ic)
                 else
-                    table.insert(paneltable, ic)
+                    TableInsert(paneltable, ic)
                 end
             end
 
             local AddNameSortedItems = function(panels)
-                if GetConVar("ttt_sort_alphabetically"):GetBool() then
-                    table.sort(panels, function(a, b) return string.lower(a.ability.Name) < string.lower(b.ability.Name) end)
+                -- If this doesn't exist we assume it's the new version of TTT and check if we're set to sort by name
+                if cvars.Bool("ttt_sort_alphabetically", cvars.String("ttt_equipment_sorting", "default") == "name") then
+                    -- If this doesn't exist then we assume it's the older version of TTT that defaults to this
+                    local ascending = cvars.Bool("ttt_equipment_ascending", true)
+                    TableSort(panels, function(a, b)
+                        local ret = StringLower(a.ability.Name) < StringLower(b.ability.Name)
+                        if not ascending then
+                            ret = not ret
+                        end
+                        return ret
+                    end)
                 end
                 for _, panel in pairs(panels) do
                     dlist:AddPanel(panel)
@@ -444,7 +461,7 @@ if CLIENT then
             end
             AddNameSortedItems(paneltablefav)
             if GetConVar("ttt_shop_random_position"):GetBool() then
-                paneltable = table.Shuffle(paneltable)
+                paneltable = TableShuffle(paneltable)
                 for _, panel in ipairs(paneltable) do
                     dlist:AddPanel(panel)
                 end
@@ -467,7 +484,7 @@ if CLIENT then
             local filtered = {}
             for _, v in pairs(SOULBOUND.Abilities) do
                 if v and (DoesValueMatch(v, "Name", value) or DoesValueMatch(v, "Description", value)) then
-                    table.insert(filtered, v)
+                    TableInsert(filtered, v)
                 end
             end
             FillAbilityList(filtered, isSoulbound)
@@ -551,7 +568,7 @@ if CLIENT then
             local buyable_abilities = {}
             for _, panel in pairs(ability_panels) do
                 if panel.ability and #ownedAbilities < maxAbilities and not table.HasValue(ownedAbilities, panel.ability.Id) then
-                    table.insert(buyable_abilities, panel)
+                    TableInsert(buyable_abilities, panel)
                 end
             end
 
