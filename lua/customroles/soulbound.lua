@@ -55,52 +55,6 @@ hook.Add("TTTRoleSpawnsArtificially", "Soulbound_TTTRoleSpawnsArtificially", fun
     end
 end)
 
---------------------------
--- ABILITY REGISTRATION --
---------------------------
-
-SOULBOUND = {
-    Abilities = {}
-}
-
-function SOULBOUND:RegisterAbility(ability, defaultEnabled)
-    defaultEnabled = defaultEnabled or 1
-    ability.Id = ability.Id or ability.id or ability.ID
-
-    if SOULBOUND.Abilities[ability.Id] then
-        ErrorNoHalt("[SOULBOUND] Soulbound ability already exists with ID '" .. ability.Id .. "'\n")
-        return
-    end
-
-    local enabled = CreateConVar("ttt_soulbound_" .. ability.Id .. "_enabled", tostring(defaultEnabled), FCVAR_REPLICATED)
-    ability.Enabled = function()
-        return enabled:GetBool()
-    end
-    TableInsert(ROLE_CONVARS[ROLE_SOULBOUND], {
-        cvar = "ttt_soulbound_" .. ability.Id .. "_enabled",
-        type = ROLE_CONVAR_TYPE_BOOL
-    })
-
-    if not ability.SoulboundOnly then
-        local enabledGW = CreateConVar("ttt_ghostwhisperer_" .. ability.Id .. "_enabled", tostring(defaultEnabled), FCVAR_REPLICATED)
-        ability.EnabledGW = function()
-            return enabledGW:GetBool()
-        end
-        TableInsert(ROLE_CONVARS[ROLE_GHOSTWHISPERER], {
-            cvar = "ttt_ghostwhisperer_" .. ability.Id .. "_enabled",
-            type = ROLE_CONVAR_TYPE_BOOL
-        })
-    end
-
-    SOULBOUND.Abilities[ability.Id] = ability
-end
-
-local abilityFiles, _ = file.Find("soulbound_abilities/*.lua", "LUA")
-for _, fil in ipairs(abilityFiles) do
-    if SERVER then AddCSLuaFile("soulbound_abilities/" .. fil) end
-    include("soulbound_abilities/" .. fil)
-end
-
 if SERVER then
     AddCSLuaFile()
 
@@ -799,4 +753,50 @@ if CLIENT then
             return html
         end
     end)
+end
+
+--------------------------
+-- ABILITY REGISTRATION --
+--------------------------
+
+SOULBOUND = {
+    Abilities = {}
+}
+
+function SOULBOUND:RegisterAbility(ability, defaultEnabled)
+    defaultEnabled = defaultEnabled or 1
+    ability.Id = ability.Id or ability.id or ability.ID
+
+    if SOULBOUND.Abilities[ability.Id] then
+        ErrorNoHalt("[SOULBOUND] Soulbound ability already exists with ID '" .. ability.Id .. "'\n")
+        return
+    end
+
+    local enabled = CreateConVar("ttt_soulbound_" .. ability.Id .. "_enabled", tostring(defaultEnabled), FCVAR_REPLICATED)
+    ability.Enabled = function()
+        return enabled:GetBool()
+    end
+    TableInsert(ROLE_CONVARS[ROLE_SOULBOUND], {
+        cvar = "ttt_soulbound_" .. ability.Id .. "_enabled",
+        type = ROLE_CONVAR_TYPE_BOOL
+    })
+
+    if not ability.SoulboundOnly then
+        local enabledGW = CreateConVar("ttt_ghostwhisperer_" .. ability.Id .. "_enabled", tostring(defaultEnabled), FCVAR_REPLICATED)
+        ability.EnabledGW = function()
+            return enabledGW:GetBool()
+        end
+        TableInsert(ROLE_CONVARS[ROLE_GHOSTWHISPERER], {
+            cvar = "ttt_ghostwhisperer_" .. ability.Id .. "_enabled",
+            type = ROLE_CONVAR_TYPE_BOOL
+        })
+    end
+
+    SOULBOUND.Abilities[ability.Id] = ability
+end
+
+local abilityFiles, _ = file.Find("soulbound_abilities/*.lua", "LUA")
+for _, fil in ipairs(abilityFiles) do
+    if SERVER then AddCSLuaFile("soulbound_abilities/" .. fil) end
+    include("soulbound_abilities/" .. fil)
 end

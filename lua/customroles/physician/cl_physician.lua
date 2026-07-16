@@ -1,4 +1,4 @@
--- Logan Christianson
+-- Originally contributed by Logan Christianson
 local PHYSICIAN = PHYSICIAN or {}
 local nextGet = 0
 local nextGetOffset = 1

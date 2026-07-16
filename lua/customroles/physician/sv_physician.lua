@@ -1,4 +1,4 @@
--- Logan Christianson
+-- Originally contributed by Logan Christianson
 AddCSLuaFile()
 
 local player = player

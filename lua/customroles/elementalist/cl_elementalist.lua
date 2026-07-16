@@ -1,4 +1,4 @@
--- Logan Christianson
+-- Originally contributed by Logan Christianson
 local shouldDrawdarkOverlay = false
 local iceOverlay = nil
 local darkOverlay = {

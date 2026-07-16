@@ -1,4 +1,4 @@
--- Logan Christianson
+-- Originally contributed by Logan Christianson
 util.AddNetworkString("BeginIceScreen")
 util.AddNetworkString("EndIceScreen")
 util.AddNetworkString("BeginDimScreen")
