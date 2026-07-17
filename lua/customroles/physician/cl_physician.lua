@@ -78,11 +78,11 @@ net.Receive("GetAllPhysicianTrackedPlayersCallback", function(len)
 end)
 
 -- Reset scoreboard on upgrade purchased
-hook.Add("TTTBoughtItem", "Physician_TTTBoughtItem", function(isItemNotWep, equipment)
+local function Physician_TTTBoughtItem(isItemNotWep, equipment)
     if isItemNotWep and equipment == EQUIP_PHS_TRACKER then
         ResetScoreboard()
     end
-end)
+end
 
 -- Reset scoreboard on given role
 hook.Add("TTTPlayerRoleChanged", "Physician_TTTPlayerRoleChanged", function(_, oldRole, newRole)
@@ -98,7 +98,7 @@ hook.Add("TTTPrepareRound", "Physician_Cleaup_TTTPrepareRound", function()
     PHYSICIAN.trackedPlayers = {}
 end)
 
-hook.Add("TTTScoreboardColumns", "Physician_TTTScoreboardColumns", function(basePanel)
+local function Physician_TTTScoreboardColumns(basePanel)
     local ply = LocalPlayer()
 
     if ply:IsPhysician() then
@@ -123,7 +123,7 @@ hook.Add("TTTScoreboardColumns", "Physician_TTTScoreboardColumns", function(base
             return text or ""
         end, 90)
     end
-end)
+end
 
 hook.Add("Initialize", "Physician_Translations_Initialize", function()
     -- Scoreboard
@@ -157,3 +157,12 @@ hook.Add("TTTTutorialRoleText", "Physician_TTTTutorialRoleText", function(player
         return html
     end
 end)
+
+------------------
+-- REGISTRATION --
+------------------
+
+ROLE_REGISTERED_HOOKS[ROLE_PHYSICIAN] = {
+    ["TTTBoughtItem"] = Physician_TTTBoughtItem,
+    ["TTTScoreboardColumns"] = Physician_TTTScoreboardColumns
+}

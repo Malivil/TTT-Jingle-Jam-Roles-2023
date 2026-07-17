@@ -63,8 +63,6 @@ ROLE.convars = {
     }
 }
 
-RegisterRole(ROLE)
-
 local function IsRenegade(ply)
     return ply:IsRenegade() and not ply:IsRoleAbilityDisabled()
 end
@@ -119,7 +117,7 @@ if SERVER then
         WIN_RENEGADE = GenerateNewWinID(ROLE_RENEGADE)
     end)
 
-    AddHook("TTTCheckForWin", "Renegade_TTTCheckForWin", function()
+    local function Renegade_TTTCheckForWin()
         local renegade_alive = false
         local other_alive = false
         for _, v in PlayerIterator() do
@@ -137,22 +135,22 @@ if SERVER then
         elseif renegade_alive then
             return WIN_NONE
         end
-    end)
+    end
 
-    AddHook("TTTPrintResultMessage", "Renegade_TTTPrintResultMessage", function(type)
+    local function Renegade_TTTPrintResultMessage(type)
         if type == WIN_RENEGADE then
             LANG.Msg("win_renegade", { role = ROLE_STRINGS[ROLE_RENEGADE] })
             ServerLog("Result: " .. ROLE_STRINGS[ROLE_RENEGADE] .. " wins.\n")
             return true
         end
-    end)
+    end
 
     ------------------
     -- TRAITOR CHAT --
     ------------------
 
     -- Allow renegade to send messages to traitor team
-    AddHook("PlayerSay", "Renegade_PlayerSay", function(ply, text, team_only)
+    local function Renegade_PlayerSay(ply, text, team_only)
         if not team_only then return end
         if not IsPlayer(ply) or not ply:Alive() or ply:IsSpec() then return end
         if not IsRenegade(ply) then return end
@@ -176,10 +174,10 @@ if SERVER then
             net.Send(targets)
         end
         return ""
-    end)
+    end
 
     -- Allow renegades to read traitor chat
-    AddHook("TTTTeamChatTargets", "Renegade_TTTTeamChatTargets", function(sender, msg, targets, from_chat)
+    local function Renegade_TTTTeamChatTargets(sender, msg, targets, from_chat)
         if not IsPlayer(sender) or not sender:Alive() or sender:IsSpec() then return end
 
         -- Send traitor chat messages to renegades, but use a separate message so we can override their role to always show "traitor"
@@ -208,10 +206,10 @@ if SERVER then
                 end
             end
         end
-    end)
+    end
 
     --- Allow renegades and traitors to see that each other is speaking
-    AddHook("TTTTeamVoiceChatTargets", "Renegade_TTTTeamVoiceChatTargets", function(speaker, targets)
+    local function Renegade_TTTTeamVoiceChatTargets(speaker, targets)
         if not IsPlayer(speaker) or not speaker:Alive() or speaker:IsSpec() then return end
 
         -- Add renegades to the traitor team target list
@@ -230,16 +228,28 @@ if SERVER then
                 end
             end
         end
-    end)
+    end
+
+    ------------------
+    -- REGISTRATION --
+    ------------------
+
+    ROLE.registeredhooks = {
+        ["PlayerSay"] = Renegade_PlayerSay,
+        ["TTTCheckForWin"] = Renegade_TTTCheckForWin,
+        ["TTTPrintResultMessage"] = Renegade_TTTPrintResultMessage,
+        ["TTTTeamChatTargets"] = Renegade_TTTTeamChatTargets,
+        ["TTTTeamVoiceChatTargets"] = Renegade_TTTTeamVoiceChatTargets
+    }
 end
 
 -- Allow renegades to speak to and listen to traitors
-AddHook("TTTCanUseTraitorVoice", "Renegade_TTTCanUseHearTraitorVoice", function(ply)
+local function Renegade_TTTCanUseHearTraitorVoice(ply)
     if not IsPlayer(ply) then return end
     if not IsRenegade(ply) then return end
 
     return true
-end)
+end
 
 if CLIENT then
 
@@ -247,7 +257,7 @@ if CLIENT then
     -- TARGET ID --
     ---------------
 
-    AddHook("TTTTargetIDPlayerRoleIcon", "Renegade_TTTTargetIDPlayerRoleIcon", function(ply, cli, role, noz, color_role, hideBeggar, showJester, hideBodysnatcher)
+    local function Renegade_TTTTargetIDPlayerRoleIcon(ply, cli, role, noz, color_role, hideBeggar, showJester, hideBodysnatcher)
         if GetRoundState() < ROUND_ACTIVE then return end
         if IsRenegade(cli) and (ply:IsTraitorTeam() or (renegade_show_glitch:GetBool() and ply:IsGlitch())) then
             local icon_overridden, _, _ = ply:IsTargetIDOverridden(cli)
@@ -260,9 +270,9 @@ if CLIENT then
 
             return ROLE_RENEGADE, false, ROLE_RENEGADE
         end
-    end)
+    end
 
-    AddHook("TTTTargetIDPlayerRing", "Renegade_TTTTargetIDPlayerRing", function(ent, cli, ring_visible)
+    local function Renegade_TTTTargetIDPlayerRing(ent, cli, ring_visible)
         if GetRoundState() < ROUND_ACTIVE then return end
         if not IsPlayer(ent) then return end
 
@@ -277,9 +287,9 @@ if CLIENT then
 
             return true, ROLE_COLORS_RADAR[ROLE_RENEGADE]
         end
-    end)
+    end
 
-    AddHook("TTTTargetIDPlayerText", "Renegade_TTTTargetIDPlayerText", function(ent, cli, text, col, secondary_text)
+    local function Renegade_TTTTargetIDPlayerText(ent, cli, text, col, secondary_text)
         if GetRoundState() < ROUND_ACTIVE then return end
         if not IsPlayer(ent) then return end
 
@@ -295,7 +305,7 @@ if CLIENT then
 
             return StringUpper(ROLE_STRINGS[ROLE_RENEGADE]), ROLE_COLORS_RADAR[ROLE_RENEGADE]
         end
-    end)
+    end
 
     ROLE.istargetidoverridden = function(ply, target)
         if GetRoundState() < ROUND_ACTIVE then return end
@@ -311,7 +321,7 @@ if CLIENT then
     -- SCOREBOARD --
     ----------------
 
-    AddHook("TTTScoreboardPlayerRole", "Renegade_TTTScoreboardPlayerRole", function(ply, cli, color, roleFileName)
+    local function Renegade_TTTScoreboardPlayerRole(ply, cli, color, roleFileName)
         if GetRoundState() < ROUND_ACTIVE then return end
         if IsRenegade(cli) and (ply:IsTraitorTeam() or (renegade_show_glitch:GetBool() and ply:IsGlitch())) then
             local _, role_overridden = ply:IsScoreboardInfoOverridden(cli)
@@ -325,7 +335,7 @@ if CLIENT then
 
             return ROLE_COLORS_SCOREBOARD[ROLE_RENEGADE], ROLE_STRINGS_SHORT[ROLE_RENEGADE]
         end
-    end)
+    end
 
     ROLE.isscoreboardinfooverridden = function(ply, target)
         if GetRoundState() < ROUND_ACTIVE then return end
@@ -341,7 +351,7 @@ if CLIENT then
     -- ROLE POPUP --
     ----------------
 
-    AddHook("TTTRolePopupParams", "Renegade_TTTRolePopupParams", function(cli)
+    local function Renegade_TTTRolePopupParams(cli)
         if not cli:IsRenegade() then return end
 
         local traitorlist = ""
@@ -352,9 +362,9 @@ if CLIENT then
         end
 
         return { traitorlist = traitorlist }
-    end)
+    end
 
-    AddHook("TTTRolePopupRoleStringOverride", "Renegade_TTTRolePopupRoleStringOverride", function(cli, roleString)
+    local function Renegade_TTTRolePopupRoleStringOverride(cli, roleString)
         if not cli:IsRenegade() then return end
         if not renegade_show_glitch:GetBool() then return end
 
@@ -364,7 +374,7 @@ if CLIENT then
                 return roleString .. "_glitch"
             end
         end
-    end)
+    end
 
     ----------------
     -- WIN CHECKS --
@@ -374,27 +384,27 @@ if CLIENT then
         WIN_RENEGADE = WINS_BY_ROLE[ROLE_RENEGADE]
     end)
 
-    AddHook("TTTScoringWinTitle", "Renegade_TTTScoringWinTitle", function(wintype, wintitles, title, secondary_win_role)
+    local function Renegade_TTTScoringWinTitle(wintype, wintitles, title, secondary_win_role)
         if wintype == WIN_RENEGADE then
             return { txt = "hilite_win_role_singular", params = { role = StringUpper(ROLE_STRINGS[ROLE_RENEGADE]) }, c = ROLE_COLORS[ROLE_RENEGADE] }
         end
-    end)
+    end
 
     ------------
     -- EVENTS --
     ------------
 
-    AddHook("TTTEventFinishText", "Renegade_TTTEventFinishText", function(e)
+    local function Renegade_TTTEventFinishText(e)
         if e.win == WIN_RENEGADE then
             return LANG.GetParamTranslation("ev_win_renegade", { role = StringLower(ROLE_STRINGS[ROLE_RENEGADE]) })
         end
-    end)
+    end
 
-    AddHook("TTTEventFinishIconText", "Renegade_TTTEventFinishIconText", function(e, win_string, role_string)
+    local function Renegade_TTTEventFinishIconText(e, win_string, role_string)
         if e.win == WIN_RENEGADE then
             return win_string, ROLE_STRINGS[ROLE_RENEGADE]
         end
-    end)
+    end
 
     --------------
     -- TUTORIAL --
@@ -418,4 +428,28 @@ if CLIENT then
 
         return html
     end)
+
+    ------------------
+    -- REGISTRATION --
+    ------------------
+
+    ROLE.registeredhooks = {
+        ["TTTEventFinishIconText"] = Renegade_TTTEventFinishIconText,
+        ["TTTEventFinishText"] = Renegade_TTTEventFinishText,
+        ["TTTRolePopupParams"] = Renegade_TTTRolePopupParams,
+        ["TTTRolePopupRoleStringOverride"] = Renegade_TTTRolePopupRoleStringOverride,
+        ["TTTScoreboardPlayerRole"] = Renegade_TTTScoreboardPlayerRole,
+        ["TTTScoringWinTitle"] = Renegade_TTTScoringWinTitle,
+        ["TTTTargetIDPlayerRing"] = Renegade_TTTTargetIDPlayerRing,
+        ["TTTTargetIDPlayerRoleIcon"] = Renegade_TTTTargetIDPlayerRoleIcon,
+        ["TTTTargetIDPlayerText"] = Renegade_TTTTargetIDPlayerText
+    }
 end
+
+------------------
+-- REGISTRATION --
+------------------
+
+ROLE.registeredhooks["TTTCanUseTraitorVoice"] = Renegade_TTTCanUseHearTraitorVoice
+
+RegisterRole(ROLE)

@@ -74,11 +74,11 @@ local function EndDarkOverlay()
 end
 
 -- Screen dimming
-hook.Add("RenderScreenspaceEffects", "Elementalist_RenderScreenspaceEffects", function()
+local function Elementalist_RenderScreenspaceEffects()
     if shouldDrawdarkOverlay then
         DrawColorModify(darkOverlay)
     end
-end)
+end
 
 net.Receive("BeginIceScreen", function(len)
     CreateIceOverlay(net.ReadBool())
@@ -177,3 +177,11 @@ hook.Add("TTTTutorialRoleText", "Elementalist_TTTTutorialRoleText", function(pla
         return html
     end
 end)
+
+------------------
+-- REGISTRATION --
+------------------
+
+ROLE_REGISTERED_HOOKS[ROLE_ELEMENTALIST] = {
+    ["RenderScreenspaceEffects"] = Elementalist_RenderScreenspaceEffects
+}

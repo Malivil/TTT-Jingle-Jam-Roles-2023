@@ -116,8 +116,6 @@ ROLE.onroleassigned = function(ply)
     ply:SetNWInt("TTTAdminPower", admin_starting_power:GetInt())
 end
 
-RegisterRole(ROLE)
-
 ADMIN_MESSAGE_TEXT = 0
 ADMIN_MESSAGE_PLAYER = 1
 ADMIN_MESSAGE_VARIABLE = 2
@@ -151,12 +149,20 @@ if SERVER then
         end)
     end)
 
-    hook.Add("TTTEndRound", "Admin_TTTEndRound", function()
+    local function Admin_TTTEndRound()
         for _, p in PlayerIterator() do
             p:SetNWInt("TTTAdminPower", 0)
         end
         timer.Remove("AdminPowerTimer")
-    end)
+    end
+
+    ------------------
+    -- REGISTRATION --
+    ------------------
+
+    ROLE.registeredhooks = {
+        ["TTTEndRound"] = Admin_TTTEndRound
+    }
 end
 
 if CLIENT then
@@ -164,7 +170,7 @@ if CLIENT then
     -- HUD --
     ---------
 
-    hook.Add("HUDDrawScoreBoard", "Admin_HUDDrawScoreBoard", function() -- Use HUDDrawScoreBoard instead of HUDPaint so it draws above the TTT HUD
+    local function Admin_HUDDrawScoreBoard() -- Use HUDDrawScoreBoard instead of HUDPaint so it draws above the TTT HUD
         local client = LocalPlayer()
         local wep = client:GetActiveWeapon()
         if not IsValid(wep) or wep:GetClass() ~= "weapon_ttt_adm_menu" then return end
@@ -181,7 +187,7 @@ if CLIENT then
         CRHUD:PaintBar(8, 20, ScrH() - 59, 230, 25, power_colors, power_percentage)
         draw.SimpleText(LANG.GetTranslation("admin_power_title"), "HealthAmmo", 30, ScrH() - 59, Color(0, 0, 10, 200), TEXT_ALIGN_LEFT)
         CRHUD:ShadowedText(tostring(current_power), "HealthAmmo", 230, ScrH() - 59, COLOR_WHITE, TEXT_ALIGN_RIGHT)
-    end)
+    end
 
     --------------
     -- TUTORIAL --
@@ -363,4 +369,14 @@ if CLIENT then
             chat.AddText(unpack(message))
         end
     end)
+
+    ------------------
+    -- REGISTRATION --
+    ------------------
+
+    ROLE.registeredhooks = {
+        ["HUDDrawScoreBoard"] = Admin_HUDDrawScoreBoard
+    }
 end
+
+RegisterRole(ROLE)

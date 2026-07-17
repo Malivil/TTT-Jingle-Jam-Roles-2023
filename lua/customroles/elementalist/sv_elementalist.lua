@@ -22,15 +22,15 @@ local ignitedPlayers = {}
 local blindedPlayers = {}
 
 -- Frostbite effect
-hook.Add("TTTSpeedMultiplier", "Elementalist_TTTSpeedMultiplier", function(ply, mults)
+local function Elementalist_TTTSpeedMultiplier(ply, mults)
     local effect = chilledPlayers[ply:SteamID64()]
 
     if effect then
         table.Add(mults, effect)
     end
-end)
+end
 
-hook.Add("EntityTakeDamage", "Elementalist_EntityTakeDamage", function(ent, dmginfo)
+local function Elementalist_EntityTakeDamage(ent, dmginfo)
     if not IsValidPlayerEnt(ent) then return end
     -- For some reason, crowbar attacks return true on this
     if not dmginfo:IsBulletDamage() then return end
@@ -258,7 +258,7 @@ hook.Add("EntityTakeDamage", "Elementalist_EntityTakeDamage", function(ent, dmgi
 
         att:SetHealth(math.Clamp(att:Health() + healAmount, 0, att:GetMaxHealth()))
     end
-end)
+end
 
 -- Reset all values, call all end net messages, end all timers
 local function ResetEffects(ply)
@@ -282,4 +282,14 @@ local function ResetEffects(ply)
     net.Send(ply)
 end
 
-hook.Add("PostPlayerDeath", "Elementalist_PostPlayerDeath", ResetEffects)
+
+
+------------------
+-- REGISTRATION --
+------------------
+
+ROLE_REGISTERED_HOOKS[ROLE_ELEMENTALIST] = {
+    ["EntityTakeDamage"] = Elementalist_EntityTakeDamage,
+    ["PostPlayerDeath"] = ResetEffects,
+    ["TTTSpeedMultiplier"] = Elementalist_TTTSpeedMultiplier
+}
