@@ -227,7 +227,7 @@ if CLIENT then
     local kickScreenMat = Material("ui/roles/adm/kickScreen.png")
 
     surface.CreateFont("KickText", {
-        font = "Tahoma",
+        font = GAMEMODE_DEFAULT_UI_FONT or "Tahoma",
         size = 18,
         weight = 400,
         antialias = false
