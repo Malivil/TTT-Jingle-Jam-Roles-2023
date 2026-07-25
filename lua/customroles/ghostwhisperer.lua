@@ -39,8 +39,6 @@ ROLE.translations = {
     }
 }
 
-RegisterRole(ROLE)
-
 local ghostwhisperer_limited_chat = CreateConVar("ttt_ghostwhisperer_limited_chat", "0", FCVAR_REPLICATED, "Whether only the ghost whisperer should be able to see the chat of their dead target", 0, 1)
 
 if SERVER then
@@ -52,7 +50,7 @@ if SERVER then
         end
     end)
 
-    hook.Add("PlayerCanSeePlayersChat", "GhostWhisperer_PlayerCanSeePlayersChat", function(text, teamOnly, listener, speaker)
+    local function GhostWhisperer_PlayerCanSeePlayersChat(text, teamOnly, listener, speaker)
         if not IsPlayer(listener) or not IsPlayer(speaker) then return end
         -- If the listener is dead then let the base logic handle this
         if not listener:IsActive() then return end
@@ -62,12 +60,21 @@ if SERVER then
         if speaker:Team() == TEAM_SPEC and speaker.TTTIsGhosting then
             return true
         end
-    end)
+    end
 
-    hook.Add("TTTPlayerSpawnForRound", "GhostWhisperer_TTTPlayerSpawnForRound", function(ply, dead_only)
+    local function GhostWhisperer_TTTPlayerSpawnForRound(ply, dead_only)
         if not IsPlayer(ply) then return end
         ply:ClearProperty("TTTIsGhosting")
-    end)
+    end
+
+    ------------------
+    -- REGISTRATION --
+    ------------------
+
+    ROLE.registeredhooks = {
+        ["PlayerCanSeePlayersChat"] = GhostWhisperer_PlayerCanSeePlayersChat,
+        ["TTTPlayerSpawnForRound"] = GhostWhisperer_TTTPlayerSpawnForRound
+    }
 end
 
 if CLIENT then
@@ -89,3 +96,5 @@ if CLIENT then
         end
     end)
 end
+
+RegisterRole(ROLE)

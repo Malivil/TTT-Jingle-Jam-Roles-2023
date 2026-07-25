@@ -47,58 +47,10 @@ ROLE.blockhealthconvars = true
 -- This role is only for dead players so we don't need shop ConVars
 ROLE.blockshopconvars = true
 
-RegisterRole(ROLE)
-
-hook.Add("TTTRoleSpawnsArtificially", "Soulbound_TTTRoleSpawnsArtificially", function(role)
+local function Soulbound_TTTRoleSpawnsArtificially(role)
     if role == ROLE_SOULBOUND and util.CanRoleSpawn(ROLE_SOULMAGE) then
         return true
     end
-end)
-
---------------------------
--- ABILITY REGISTRATION --
---------------------------
-
-SOULBOUND = {
-    Abilities = {}
-}
-
-function SOULBOUND:RegisterAbility(ability, defaultEnabled)
-    defaultEnabled = defaultEnabled or 1
-    ability.Id = ability.Id or ability.id or ability.ID
-
-    if SOULBOUND.Abilities[ability.Id] then
-        ErrorNoHalt("[SOULBOUND] Soulbound ability already exists with ID '" .. ability.Id .. "'\n")
-        return
-    end
-
-    local enabled = CreateConVar("ttt_soulbound_" .. ability.Id .. "_enabled", tostring(defaultEnabled), FCVAR_REPLICATED)
-    ability.Enabled = function()
-        return enabled:GetBool()
-    end
-    TableInsert(ROLE_CONVARS[ROLE_SOULBOUND], {
-        cvar = "ttt_soulbound_" .. ability.Id .. "_enabled",
-        type = ROLE_CONVAR_TYPE_BOOL
-    })
-
-    if not ability.SoulboundOnly then
-        local enabledGW = CreateConVar("ttt_ghostwhisperer_" .. ability.Id .. "_enabled", tostring(defaultEnabled), FCVAR_REPLICATED)
-        ability.EnabledGW = function()
-            return enabledGW:GetBool()
-        end
-        TableInsert(ROLE_CONVARS[ROLE_GHOSTWHISPERER], {
-            cvar = "ttt_ghostwhisperer_" .. ability.Id .. "_enabled",
-            type = ROLE_CONVAR_TYPE_BOOL
-        })
-    end
-
-    SOULBOUND.Abilities[ability.Id] = ability
-end
-
-local abilityFiles, _ = file.Find("soulbound_abilities/*.lua", "LUA")
-for _, fil in ipairs(abilityFiles) do
-    if SERVER then AddCSLuaFile("soulbound_abilities/" .. fil) end
-    include("soulbound_abilities/" .. fil)
 end
 
 if SERVER then
@@ -133,7 +85,7 @@ if SERVER then
     -- PASSIVE ABILITIES --
     -----------------------
 
-    hook.Add("Think", "Soulbound_Think", function()
+    local function Soulbound_Think()
         for _, p in PlayerIterator() do
             if not p:IsSoulbound() and not p.TTTIsGhosting then continue end
             if p:IsRoleAbilityDisabled() then continue end
@@ -158,7 +110,7 @@ if SERVER then
                 ability:Passive(p, target)
             end
         end
-    end)
+    end
 
     ----------------------
     -- ABILITY PURCHASE --
@@ -210,7 +162,7 @@ if SERVER then
     -- ALIVE CHECK --
     -----------------
 
-    hook.Add("TTTPlayerSpawnForRound", "Soulbound_TTTPlayerSpawnForRound", function(ply, dead_only)
+    local function Soulbound_TTTPlayerSpawnForRound(ply, dead_only)
         if not IsPlayer(ply) then return end
         local max = math.max(soulbound_max_abilities:GetInt(), ghostwhisperer_max_abilities:GetInt())
         for i = 1, max do
@@ -232,7 +184,16 @@ if SERVER then
             ply:SetNWInt("TTTSoulboundOldRole", -1)
             SendFullStateUpdate()
         end
-    end)
+    end
+
+    ------------------
+    -- REGISTRATION --
+    ------------------
+
+    ROLE.registeredhooks = {
+        ["TTTPlayerSpawnForRound"] = Soulbound_TTTPlayerSpawnForRound,
+        ["Think"] = Soulbound_Think
+    }
 end
 
 if CLIENT then
@@ -596,7 +557,7 @@ if CLIENT then
         dshop = dframe
     end
 
-    hook.Add("OnContextMenuOpen", "Soulbound_OnContextMenuOpen", function()
+    local function Soulbound_OnContextMenuOpen()
         if GetRoundState() ~= ROUND_ACTIVE then return end
 
         if not client then
@@ -609,7 +570,7 @@ if CLIENT then
         else
             OpenSoulboundShop(client:IsSoulbound())
         end
-    end)
+    end
 
     ---------------
     -- ABILITIES --
@@ -623,7 +584,7 @@ if CLIENT then
         net.SendToServer()
     end
 
-    hook.Add("PlayerBindPress", "Soulbound_PlayerBindPress", function(ply, bind, pressed)
+    local function Soulbound_PlayerBindPress(ply, bind, pressed)
         if not IsPlayer(ply) then return end
         if not ply:IsSoulbound() and not ply.TTTIsGhosting then return end
         if not pressed then return end
@@ -632,7 +593,7 @@ if CLIENT then
             local num = tonumber(string.Replace(bind, "slot", "")) or 1
             UseAbility(num, ply:IsSoulbound())
         end
-    end)
+    end
 
     ---------
     -- HUD --
@@ -640,7 +601,7 @@ if CLIENT then
 
     local hide_role = GetConVar("ttt_hide_role")
 
-    hook.Add("HUDPaint", "Soulbound_HUDPaint", function()
+    local function Soulbound_HUDPaint()
         if GetRoundState() ~= ROUND_ACTIVE then return end
 
         if not hide_role then
@@ -741,9 +702,9 @@ if CLIENT then
         surface.DrawLine(x + length, y, x + gap, y)
         surface.DrawLine(x, y - length, x, y - gap)
         surface.DrawLine(x, y + length, x, y + gap)
-    end)
+    end
 
-    hook.Add("HUDDrawScoreBoard", "Soulbound_HUDDrawScoreBoard", function() -- Use HUDDrawScoreBoard instead of HUDPaint so it draws above the TTT HUD
+    local function Soulbound_HUDDrawScoreBoard() -- Use HUDDrawScoreBoard instead of HUDPaint so it draws above the TTT HUD
         if GetRoundState() ~= ROUND_ACTIVE then return end
         if hide_role:GetBool() then return end
 
@@ -760,13 +721,13 @@ if CLIENT then
         else
             CRHUD:ShadowedText(ROLE_STRINGS[ROLE_SOULBOUND], "TraitorState", margin + 84, ScrH() - height - margin, COLOR_WHITE, TEXT_ALIGN_CENTER)
         end
-    end)
+    end
 
     ----------------
     -- SCOREBOARD --
     ----------------
 
-    hook.Add("TTTScoreboardPlayerRole", "Soulbound_TTTScoreboardPlayerRole", function(ply, cli, c, roleStr)
+    local function Soulbound_TTTScoreboardPlayerRole(ply, cli, c, roleStr)
         if GetRoundState() < ROUND_ACTIVE then return end
         if not IsPlayer(ply) then return end
         if ply:IsActive() then return end
@@ -782,7 +743,7 @@ if CLIENT then
         if oldRole == ROLE_NONE then return end
 
         return ROLE_COLORS_SCOREBOARD[oldRole], ROLE_STRINGS_SHORT[oldRole]
-    end)
+    end
 
     --------------
     -- TUTORIAL --
@@ -799,4 +760,70 @@ if CLIENT then
             return html
         end
     end)
+
+    ------------------
+    -- REGISTRATION --
+    ------------------
+
+    ROLE.registeredhooks = {
+        ["HUDDrawScoreBoard"] = Soulbound_HUDDrawScoreBoard,
+        ["HUDPaint"] = Soulbound_HUDPaint,
+        ["OnContextMenuOpen"] = Soulbound_OnContextMenuOpen,
+        ["PlayerBindPress"] = Soulbound_PlayerBindPress,
+        ["TTTScoreboardPlayerRole"] = Soulbound_TTTScoreboardPlayerRole
+    }
+end
+
+------------------
+-- REGISTRATION --
+------------------
+
+ROLE.registeredhooks["TTTRoleSpawnsArtificially"] = Soulbound_TTTRoleSpawnsArtificially
+
+RegisterRole(ROLE)
+
+--------------------------
+-- ABILITY REGISTRATION --
+--------------------------
+
+SOULBOUND = {
+    Abilities = {}
+}
+
+function SOULBOUND:RegisterAbility(ability, defaultEnabled)
+    defaultEnabled = defaultEnabled or 1
+    ability.Id = ability.Id or ability.id or ability.ID
+
+    if SOULBOUND.Abilities[ability.Id] then
+        ErrorNoHalt("[SOULBOUND] Soulbound ability already exists with ID '" .. ability.Id .. "'\n")
+        return
+    end
+
+    local enabled = CreateConVar("ttt_soulbound_" .. ability.Id .. "_enabled", tostring(defaultEnabled), FCVAR_REPLICATED)
+    ability.Enabled = function()
+        return enabled:GetBool()
+    end
+    TableInsert(ROLE_CONVARS[ROLE_SOULBOUND], {
+        cvar = "ttt_soulbound_" .. ability.Id .. "_enabled",
+        type = ROLE_CONVAR_TYPE_BOOL
+    })
+
+    if not ability.SoulboundOnly then
+        local enabledGW = CreateConVar("ttt_ghostwhisperer_" .. ability.Id .. "_enabled", tostring(defaultEnabled), FCVAR_REPLICATED)
+        ability.EnabledGW = function()
+            return enabledGW:GetBool()
+        end
+        TableInsert(ROLE_CONVARS[ROLE_GHOSTWHISPERER], {
+            cvar = "ttt_ghostwhisperer_" .. ability.Id .. "_enabled",
+            type = ROLE_CONVAR_TYPE_BOOL
+        })
+    end
+
+    SOULBOUND.Abilities[ability.Id] = ability
+end
+
+local abilityFiles, _ = file.Find("soulbound_abilities/*.lua", "LUA")
+for _, fil in ipairs(abilityFiles) do
+    if SERVER then AddCSLuaFile("soulbound_abilities/" .. fil) end
+    include("soulbound_abilities/" .. fil)
 end

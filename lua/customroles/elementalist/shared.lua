@@ -1,4 +1,4 @@
--- Logan Christianson
+-- Originally contributed by Logan Christianson
 local ROLE = {}
 
 -- Allowing of individual effect upgrades
