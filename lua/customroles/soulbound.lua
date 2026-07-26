@@ -774,6 +774,12 @@ if CLIENT then
     }
 end
 
+------------------
+-- REGISTRATION --
+------------------
+
+ROLE.hookregistrationdependencies = {ROLE_GHOSTWHISPERER}
+
 RegisterRole(ROLE)
 
 --------------------------
