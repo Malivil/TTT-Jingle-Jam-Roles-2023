@@ -97,4 +97,6 @@ if CLIENT then
     end)
 end
 
+ROLE.hookregistrationdependencies = {ROLE_SOULBOUND}
+
 RegisterRole(ROLE)
