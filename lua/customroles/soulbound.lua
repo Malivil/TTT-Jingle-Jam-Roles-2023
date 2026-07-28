@@ -47,11 +47,11 @@ ROLE.blockhealthconvars = true
 -- This role is only for dead players so we don't need shop ConVars
 ROLE.blockshopconvars = true
 
-local function Soulbound_TTTRoleSpawnsArtificially(role)
+hook.Add("TTTRoleSpawnsArtificially", "Soulbound_TTTRoleSpawnsArtificially", function(role)
     if role == ROLE_SOULBOUND and util.CanRoleSpawn(ROLE_SOULMAGE) then
         return true
     end
-end
+end)
 
 if SERVER then
     AddCSLuaFile()
@@ -778,7 +778,7 @@ end
 -- REGISTRATION --
 ------------------
 
-ROLE.registeredhooks["TTTRoleSpawnsArtificially"] = Soulbound_TTTRoleSpawnsArtificially
+ROLE.hookregistrationdependencies = {ROLE_GHOSTWHISPERER}
 
 RegisterRole(ROLE)
 
